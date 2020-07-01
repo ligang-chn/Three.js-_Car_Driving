@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>three.js webgl - materials - car</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<link type="text/css" rel="stylesheet" href="main.css">
+		<style>
+			body {
+				color: #444;
+				background: #eee;
+			}
+			a {
+				color: #08f;
+			}
+			.colorPicker {
+				display: inline-block;
+				margin: 0 10px
+			}
+		</style>
+		
+	</head>
+	
+	<body>
+		<div id="info">
+			<!-- <a href="https://threejs.org" target="_blank" rel="noopener">three.js</a> car materials<br/>
+			Ferrari 458 Italia model by <a href="https://sketchfab.com/models/57bf6cc56931426e87494f554df1dab6" target="_blank" rel="noopener">vicent091036</a> -->
+			<!-- <br><br> -->
+			<span class="colorPicker"><input id="body-color" type="color" value="#000333"></input><br/>Body</span>
+			<span class="colorPicker"><input id="details-color" type="color" value="#ffffff"></input><br/>Details</span>
+			<span class="colorPicker"><input id="glass-color" type="color" value="#ffffff"></input><br/>Glass</span>
+			<!-- Description -->
+		</div>	
+
+		<div id="container"></div>
+		
+		<script type="module">
+			
+			import * as THREE from '../build/three.module.js';
+
+			import Stats from './jsm/libs/stats.module.js';
+
+			import { OrbitControls } from './jsm/controls/OrbitControls.js';
+			import { RoomEnvironment } from './jsm/environments/RoomEnvironment.js';
+
+			import { GLTFLoader } from './jsm/loaders/GLTFLoader.js';
+			import { DRACOLoader } from './jsm/loaders/DRACOLoader.js';
+
+			import { OBJLoader } from './jsm/loaders/OBJLoader.js';
+			import { GUI } from '../../examples/jsm/libs/dat.gui.module.js';
+			
+			import { Line2 } from './jsm/lines/Line2.js';
+			import { LineMaterial } from './jsm/lines/LineMaterial.js';
+			import { LineGeometry } from './jsm/lines/LineGeometry.js';
+			import { GeometryUtils } from './jsm/utils/GeometryUtils.js';
+
+			import { PointerLockControls } from './jsm/controls/PointerLockControls.js';
+
+			var camera, scene, renderer,light,material;
+			var stats,matLineSolid,matLineSolidCar,matLineSolidThick,matLineDashed;
+			var controls,controlsPoint;
+			var grid, wheels = [];
+			var obtControls, groundMesh,jsonName,jsonResult;//json文件名
+			var colors=[];
+			var sum=0;
+			var boundary_linesObj;
+			var lineDashed,lineSolid,lineSolidCar,lineSolidThick;
+			var carModel,points,directionVecX=[],directionVecY=[],directionVecZ=[];
+			
+			var state = {
+				animateBones: false
+			};
+
+			var pointSolidArr = [0,0,0,0,0,0];
+			var pointSolidCarArr = [0,0,0,0,0,0];			
+			var pointSolidThickArr = [0,0,0,0,0,0];
+			var pointDashedArr = [0,0,0,0,0,0];
+
+			//移动方向标志位
+			var moveForward = false;
+			var moveBackward = false;
+			var moveLeft = false;
+			var moveRight = false;
+
+			var speed = 100; //控制器移动速度
+			var clock = new THREE.Clock();//声明一个时钟对象
+			var mixer;
+
+
+
+			function loadJSONFile() {
+				// console.clear();
+				console.log("json读取开始，"+jsonName);
+				// jsonName="JSON";
+				var url = "/examples/json/"+jsonName+".json";/*json文件url，本地的就写本地的位置，如果是服务器的就写服务器的路径*/
+				var request = new XMLHttpRequest();
+				request.open("get", url);/*设置请求方法与路径*/
+				request.send(null);/*不发送数据到服务器*/
+				request.onload = function () {/*XHR对象获取到返回信息后执行*/
+					if (request.status == 200) {/*返回状态为200，即为数据获取成功*/
+						// console.log("读取结果：", request.responseText);//当读取完成之后会回调这个函数，然后此时文件的内容存储到了result中。直接操作即可。
+						jsonResult= JSON.parse(request.responseText);
+						// console.log(jsonResult.scenario.lines.boundary_lines[0][0]);
+						// boundary_linesObj=jsonResult.scenario.lines.boundary_lines[0];
+						// console.log(jsonResult.scenario.lines.boundary_lines[0]);
+						// console.log("pointSolidArr: ",pointSolidArr);
+						// console.log("pointSolidCarArr: ",pointSolidCarArr);
+						// console.log("pointSolidThickArr: ",pointSolidThickArr);
+						// console.log("pointDashedArr: ",pointDashedArr);
+						
+						for ( var i = 0; i  <jsonResult.scenario.lines.boundary_lines.length; i ++ ) {
+							pointSolidArr=[];
+							console.log("pointSolidArr: ",pointSolidArr);
+							pointSolidArr.push(jsonResult.scenario.lines.boundary_lines[i][0][0]);
+							pointSolidArr.push(0);
+							pointSolidArr.push(jsonResult.scenario.lines.boundary_lines[i][0][1]);
+							pointSolidArr.push(jsonResult.scenario.lines.boundary_lines[i][1][0]);
+							pointSolidArr.push(0);
+							pointSolidArr.push(jsonResult.scenario.lines.boundary_lines[i][1][1]);
+							
+							// console.log(pointArr);
+							// pointArr = jsonResult.scenario.lines.boundary_lines[i];
+							createLine();
+							
+						}
+						
+						for ( var i = 0; i  <jsonResult.scenario.lines.solid_lines.length; i ++ ) {
+							pointSolidCarArr=[];
+							pointSolidCarArr.push(jsonResult.scenario.lines.solid_lines[i][0][0]);
+							pointSolidCarArr.push(0);
+							pointSolidCarArr.push(jsonResult.scenario.lines.solid_lines[i][0][1]);
+							pointSolidCarArr.push(jsonResult.scenario.lines.solid_lines[i][1][0]);
+							pointSolidCarArr.push(0);
+							pointSolidCarArr.push(jsonResult.scenario.lines.solid_lines[i][1][1]);
+							
+							// console.log(pointArr);
+							// pointArr = jsonResult.scenario.lines.boundary_lines[i];
+							createLine();
+						}
+
+						for ( var i = 0; i  <jsonResult.scenario.lines.dashed_lines.length; i ++ ) {
+							pointDashedArr=[];
+							pointDashedArr.push(jsonResult.scenario.lines.dashed_lines[i][0][0]);
+							pointDashedArr.push(0);
+							pointDashedArr.push(jsonResult.scenario.lines.dashed_lines[i][0][1]);
+							pointDashedArr.push(jsonResult.scenario.lines.dashed_lines[i][1][0]);
+							pointDashedArr.push(0);
+							pointDashedArr.push(jsonResult.scenario.lines.dashed_lines[i][1][1]);
+
+							// console.log(pointArr);
+							// pointArr = jsonResult.scenario.lines.boundary_lines[i];
+							createLine();
+						}
+						
+						for ( var i = 0; i  <jsonResult.scenario.lines.thick_lines.length; i ++ ) {
+							pointSolidThickArr=[];
+							pointSolidThickArr.push(jsonResult.scenario.lines.thick_lines[i][0][0]);
+							pointSolidThickArr.push(0);
+							pointSolidThickArr.push(jsonResult.scenario.lines.thick_lines[i][0][1]);
+							pointSolidThickArr.push(jsonResult.scenario.lines.thick_lines[i][1][0]);
+							pointSolidThickArr.push(0);
+							pointSolidThickArr.push(jsonResult.scenario.lines.thick_lines[i][1][1]);
+
+							// console.log(pointArr);
+							// pointArr = jsonResult.scenario.lines.boundary_lines[i];
+							createLine();
+						}	
+						pointSolidArr = [0,0,0,0,0,0];
+						pointSolidCarArr =  [0,0,0,0,0,0];
+						pointSolidThickArr =  [0,0,0,0,0,0];
+						pointDashedArr =  [0,0,0,0,0,0];	
+					}
+				}
+			}
+			
+			//渲染器
+			function initRender(){
+				var container = document.getElementById( 'container' );
+
+				renderer = new THREE.WebGLRenderer( { antialias: true } );//生成一个渲染器
+				renderer.setPixelRatio( window.devicePixelRatio );//兼容高清屏幕
+				renderer.setSize( window.innerWidth, window.innerHeight );//设置窗口尺寸
+				renderer.setAnimationLoop( render );
+				renderer.outputEncoding = THREE.sRGBEncoding;//输出编码
+				renderer.toneMapping = THREE.ACESFilmicToneMapping;
+				renderer.shadowMap.enabled=true;
+				//告诉渲染器需要阴影效果
+				container.appendChild( renderer.domElement );
+			}
+
+			//设置相机
+			function initCamera(){
+				camera = new THREE.PerspectiveCamera( 30, window.innerWidth / window.innerHeight, 0.1, 1500 );
+				camera.position.set( 60, 20, - 50 );
+			}
+
+			//场景
+			function initScene(){
+				// gui = new GUI();
+
+				scene = new THREE.Scene(); //生成一个场景
+				scene.background = new THREE.Color( 0x000000 );//场景的背景颜色
+				scene.environment = new RoomEnvironment( renderer );
+				// scene.fog = new THREE.Fog( 0xeeeeee, 10, 50 );//雾空间
+			}
+
+
+			function initLight(){
+				scene.add(new THREE.AmbientLight(0x444444));
+
+				light=new THREE.DirectionalLight(0xffffff);
+				light.position.set(20, 20, 20 );
+
+				light.castShadow = true;
+				light.shadow.camera.top = 10;
+				light.shadow.camera.bottom = -10;
+				light.shadow.camera.left = -10;
+				light.shadow.camera.right = 10;
+
+				//告诉平行光需要开启阴影投射
+				light.castShadow = true;
+
+				scene.add(light);
+			}
+
+			function initGrid(){
+				window.addEventListener( 'resize', onWindowResize, false );
+
+				grid = new THREE.GridHelper( 500, 100, 0x444444, 0x888888 );//网格设置
+				grid.material.opacity = 0.4;
+				grid.material.depthWrite = false;
+				grid.material.transparent = true;
+
+				scene.add( grid );
+			}
+
+			
+
+			//初始化dat.GUI简化试验流程
+			function initGui() {
+				//声明一个保存需求修改的相关数据的对象
+				controls = {
+					// lightY:30, //灯光y轴的位置
+					// sphereX:0, //球的x轴的位置
+					// sphereZ:0, //球的z轴的位置
+					// cubeX:25, //立方体的x轴位置
+					// cubeZ:-5 ,//立方体的z轴的位置
+
+					obtZoom: obtControls.enableZoom,
+					scenarioFather: "Cross6_left_turn",
+					scenarioFile: "scenario1",
+					// load: function(){
+					// 	localStorage.getItem
+					// }
+					addPoint: addPoint
+				};
+
+				var datGui=new GUI();//初始化对象
+
+				var sceneControls=datGui.addFolder("Choose ODD please");//分组设置
+				sceneControls.add(controls,"addPoint");
+
+				sceneControls.add(controls,"obtZoom").onChange(function (e){
+					obtControls.enableZoom=e;
+				});
+				
+				var dictFather={"Cross6_left_turn":6,"Cross6_right_turn":7,"":2,
+								"Cross6_right_turn_2":5,"Cross6_right_turn_3":1,
+								"HIghway_8_lanes":1,"Highway_front_cutin":7,
+								"T_cross":2,"urban_narrow_road":1,
+								"use_case_urban":4,"use_case_crossing":2};
+				var listFather=Object.keys(dictFather);
+				var str="scenario";
+				var listFile=[];
+				var item,tmp;
+				// listFile.push("cube");
+				sceneControls.add(controls,"scenarioFather", listFather).onChange(function (e){
+					jsonName=e;
+					tmp=e;
+					listFile=[];
+					// console.log("jsonName1：",jsonName);
+					for(var i=1;i<=dictFather[jsonName];i++){
+						str="scenario"+i;
+						listFile.push(str);
+					}
+
+					sceneControls.remove(item); 
+					
+					item=sceneControls.add(controls,"scenarioFile", listFile).onChange(function (e){
+						jsonName=tmp;//必须恢复上一级路径值
+						jsonName=jsonName+"/"+e;
+						// console.log("内: ",jsonName);	
+						console.log(scene.children);
+						//删除前一场景的对象
+						var childObj=scene.getObjectByName("lineSolid");
+						while(childObj){
+							scene.remove(childObj);
+							childObj=scene.getObjectByName("lineSolid");
+						}
+							
+						loadJSONFile();
+						
+					});
+				});
+
+				item=sceneControls.add(controls,"scenarioFile", listFile).onChange(function (e){
+					jsonName=tmp;
+					jsonName=jsonName+"/"+e;
+					// console.log("外: ",jsonName);
+					loadJSONFile();
+				});
+
+				// //将设置属性添加到gui当中，gui.add(对象，属性，最小值，最大值）
+				// sizeFolder.add(gui,"lightY",0,100);
+				// sizeFolder.add(gui,'uniform');
+				// sizeFolder.add( gui, 'addPoint' );
+				// sizeFolder.open();
+				// datGui.add(gui,"sphereX",-30,30);
+				// datGui.add(gui,"sphereZ",-30,30);
+				// datGui.add(gui,"cubeX",0,60);
+				// datGui.add(gui,"cubeZ",-30,30);
+
+
+				
+				// var panel = new GUI( { width: 310 } );
+				// var folder1 = panel.addFolder( 'Visibility' );
+				// settings = {
+				// 	'show model': true,
+				// };
+				// folder1.add( settings, 'show model' ).onChange( showModel );
+				// folder1.open();
+			}
+
+			
+
+			//初始化性能插件
+			function initStats(){
+				stats = new Stats();
+				container.appendChild( stats.dom );
+			}
+
+			function initModel() {
+
+				//辅助工具
+				var helper = new THREE.AxesHelper(50);
+				scene.add(helper);
+
+				//创建平面图形的material
+				// var groundGeom = new THREE.PlaneGeometry(10, 10, 100, 100);
+				// // var lightMap = new  THREE.TextureLoader().load('/examples/tmp.jpg');
+				// var map = new  THREE.TextureLoader().load('/examples/1.png');
+				// material = new THREE.MeshLambertMaterial(
+				// 	{
+				// 		// color: 0x000000,
+				// 		// lightMap: lightMap,
+				// 		map: map
+				// 	});
+				
+				// //为了保证光照贴图能够正常显示，使用正常纹理的vu映射的值
+				// groundGeom.faceVertexUvs[1] = groundGeom.faceVertexUvs[0];
+
+				// //将平面图形添加到场景当中
+				// groundMesh = new THREE.Mesh(groundGeom, material);
+				// groundMesh.rotation.x = -Math.PI / 2;
+				
+				// // groundMesh.translateY(10);
+				
+				// scene.add(groundMesh);
+			}
+			
+			function initControls() {
+				obtControls = new OrbitControls( camera, container );
+				//设置控制器中心点
+				obtControls.target.set( 0, 0.5, 0 );
+				//使动画循环使用时阻尼或自转，即惯性
+				// controls.enableDamping=false;
+				//动态阻尼系数 就是鼠标拖拽旋转灵敏度
+				// controls.dampingFactor = 0.25;
+				//是否可以缩放
+				obtControls.enableZoom = true;
+				//是否开启右键拖拽
+				obtControls.enablePan = true;
+				//是否自动旋转
+				obtControls.autoRotate = true;
+				obtControls.autoRotateSpeed = 0.5;
+				obtControls.update();
+
+			}
+
+
+			function loadModel(){
+				// materials
+
+				var bodyMaterial = new THREE.MeshPhysicalMaterial( {
+					color: 0x000333, metalness: 1.0, roughness: 0.5, clearcoat: 0.02, clearcoatRoughness: 0.01
+				} );
+
+				var detailsMaterial = new THREE.MeshStandardMaterial( {
+					color: 0xffffff, metalness: 1.0, roughness: 0.5
+				} );
+
+				var glassMaterial = new THREE.MeshPhysicalMaterial( {
+					color: 0xffffff, metalness: 0, roughness: 0, transparency: 0.8, transparent: true
+				} );
+
+				var bodyColorInput = document.getElementById( 'body-color' );
+				bodyColorInput.addEventListener( 'input', function () {
+
+					bodyMaterial.color.set( this.value );
+
+				} );
+
+				var detailsColorInput = document.getElementById( 'details-color' );
+				detailsColorInput.addEventListener( 'input', function () {
+
+					detailsMaterial.color.set( this.value );
+
+				} );
+
+				var glassColorInput = document.getElementById( 'glass-color' );
+				glassColorInput.addEventListener( 'input', function () {
+
+					glassMaterial.color.set( this.value );
+
+				} );
+
+				// //create a blue LineBasicMaterial
+				// var material = new THREE.LineBasicMaterial( { color: 0x0000ff } );
+				// var points = [];
+				// points.push( new THREE.Vector3( - 2, 0, 0 ) );
+				// points.push( new THREE.Vector3( 0, 2, 0 ) );
+				// points.push( new THREE.Vector3( 2, 0, 0 ) );
+
+				// var geometry = new THREE.BufferGeometry().setFromPoints( points );
+
+				// var line = new THREE.Line( geometry, material );
+				// scene.add( line );
+
+				// createLine();
+
+				// var img = new THREE.MeshBasicMaterial({ //CHANGED to MeshBasicMaterial
+				// map:THREE.ImageUtils.loadTexture('textures/3d/carbon/Carbon.png')
+				// });
+				// img.map.needsUpdate = true; //ADDED
+				// // Car
+
+				//加载3d模型
+				// var objloader = new TREE.OBJLoader();
+				// objloader.load('examples/models/obj/tree.obj',function(obj){
+				// 	scene.add(obj.scene);
+				// },undefined,function(error){
+				// 	console.error(error);
+				// });
+				
+
+				var dracoLoader = new DRACOLoader();
+				dracoLoader.setDecoderPath( 'js/libs/draco/gltf/' );
+
+				var loader = new GLTFLoader();
+				loader.setDRACOLoader( dracoLoader );
+
+				loader.load( 'models/gltf/ferrari.glb', function ( gltf ) {
+
+					carModel = gltf.scene.children[ 0 ];
+
+					carModel.getObjectByName( 'body' ).material = bodyMaterial;
+
+					carModel.getObjectByName( 'rim_fl' ).material = detailsMaterial;
+					carModel.getObjectByName( 'rim_fr' ).material = detailsMaterial;
+					carModel.getObjectByName( 'rim_rr' ).material = detailsMaterial;
+					carModel.getObjectByName( 'rim_rl' ).material = detailsMaterial;
+					carModel.getObjectByName( 'trim' ).material = detailsMaterial;
+
+					carModel.getObjectByName( 'glass' ).material = glassMaterial;
+
+					wheels.push(
+						carModel.getObjectByName( 'wheel_fl' ),
+						carModel.getObjectByName( 'wheel_fr' ),
+						carModel.getObjectByName( 'wheel_rl' ),
+						carModel.getObjectByName( 'wheel_rr' )
+					);
+
+					// shadow
+					var texture = new THREE.TextureLoader().load( 'models/gltf/ferrari_ao.png' );
+					var shadow = new THREE.Mesh(
+						new THREE.PlaneBufferGeometry( 0.655 * 4, 1.3 * 4 ),
+						new THREE.MeshBasicMaterial( {
+							map: texture, opacity: 0.4, transparent: true
+						} )
+					);
+					shadow.rotation.x = - Math.PI / 2;
+					shadow.renderOrder = 2;
+					carModel.add( shadow );
+					
+					curveLine();//运动轨迹
+					// 通过Threejs的帧动画相关API播放网格模型沿着曲线做动画运动
+
+					// 声明一个数组用于存储时间序列
+					var arr = []
+					for (var i = 0; i < 100; i++) {
+						arr.push(i);
+						var dirX=points[i].x-points[i+1].x;
+						var dirZ=points[i].z-points[i+1].z;
+						directionVecX.push(dirX.toFixed(2));
+						directionVecZ.push(dirZ.toFixed(2));
+						directionVecY.push(0);
+					}
+					arr.push(100);
+					
+					
+					// 生成一个时间序列
+					var times = new Float32Array(arr);
+
+					var posArr = [];
+					points.forEach(elem => {
+						posArr.push(elem.x, elem.y, elem.z)
+					});
+
+					// 创建一个和时间序列相对应的位置坐标系列
+					var values = new Float32Array(posArr);
+					console.log("y: ",carModel.rotation.y);
+					// 创建一个帧动画的关键帧数据，曲线上的位置序列对应一个时间序列
+					var posTrack = new THREE.KeyframeTrack('.position', times, values);
+					var duration = 101;
+					var clip = new THREE.AnimationClip("default", duration, [posTrack]);
+
+					mixer = new THREE.AnimationMixer(carModel);
+					var AnimationAction = mixer.clipAction(clip);
+					AnimationAction.timeScale = 10;//时间比例
+					AnimationAction.play();
+
+					scene.add( carModel );
+				} );
+			}
+
+			
+			//窗口变动触发的函数
+			function onWindowResize() {
+
+				camera.aspect = window.innerWidth / window.innerHeight;
+				camera.updateProjectionMatrix();
+
+				renderer.setSize( window.innerWidth, window.innerHeight );
+
+			}
+			
+			
+			function render() {
+				var time = - performance.now() / 1000;
+
+				for ( var i = 0; i < wheels.length; i ++ ) {
+
+					wheels[ i ].rotation.x = time * Math.PI;
+					
+				}
+				// groundMesh.position.z=- ( time ) % 5;
+				
+				// grid.position.z = - ( time ) % 5;
+
+				renderer.render( scene, camera );
+				//更新性能插件
+				stats.update();
+				// requestAnimationFrame(render);
+				
+				
+			}
+			// var axisMixer = new THREE.Vector3(0,0,-1);
+			var axisMixerPre=new THREE.Vector3(0,0,1);
+			var indexk=0;
+			function addPoint() {
+				// 更新帧动画的时间
+				// carModel.rotateY(0.5);
+				mixer.update(0.1);
+				// carModel.rotation.y+=0.1;
+				if(indexk>100){
+					indexk=0;
+					var axisMixer = new THREE.Vector3(Number(directionVecX[indexk]),
+								0,Number(directionVecZ[indexk]));
+					carModel.rotateY(-axisMixerPre.angleTo(axisMixer));
+					axisMixerPre=new THREE.Vector3(0,0,1);
+				}
+					
+				// axisMixer.x=;
+				// axisMixer.z=Number(directionVecZ[indexk]);
+				var axisMixer = new THREE.Vector3(Number(directionVecX[indexk]),
+								0,Number(directionVecZ[indexk]));
+				carModel.rotateY(-axisMixerPre.angleTo(axisMixer));
+				indexk++;
+				axisMixerPre=axisMixer;
+			}
+
+			function createLine(){
+				//实线-边界				
+				var geometrySolid = new LineGeometry();
+				geometrySolid.setPositions( pointSolidArr );
+
+				matLineSolid = new LineMaterial( {
+					color: 0xffffff,
+					linewidth: 6, // in pixels
+					dashed: false,
+					dashScale: 1,
+					dashSize: 2,
+					gapSize: 1,
+					// needsUpdate: true
+				} );
+				matLineSolid.defines.USE_DASH = ""; 
+				matLineSolid.needsUpdate=true;
+				lineSolid = new Line2( geometrySolid, matLineSolid );
+				lineSolid.needsUpdate=true;
+				lineSolid.name="lineSolid";
+				// lineSolid.computeLineDistances();
+				// lineSolid.scale.set( 1, 1, 1 );
+				scene.add(lineSolid);
+
+				//实线-车道
+				var geometrySolidCar = new LineGeometry();
+				geometrySolidCar.setPositions( pointSolidCarArr );
+
+				matLineSolidCar = new LineMaterial( {
+					color: 0xffffff,
+					linewidth: 3, // in pixels
+					dashed: false,
+					dashScale: 1,
+					dashSize: 2,
+					gapSize: 1,
+					// needsUpdate: true
+				} );
+				matLineSolidCar.defines.USE_DASH = ""; 
+				matLineSolidCar.needsUpdate=true;
+				lineSolidCar = new Line2( geometrySolidCar, matLineSolidCar );
+				lineSolidCar.needsUpdate=true;
+				lineSolidCar.name="lineSolid";
+				// lineSolid.computeLineDistances();
+				// lineSolid.scale.set( 1, 1, 1 );
+				scene.add(lineSolidCar);
+
+				//实线-斑马线
+				var geometrySolidThick = new LineGeometry();
+				geometrySolidThick.setPositions( pointSolidThickArr );
+
+				matLineSolidThick = new LineMaterial( {
+					color: 0x8D8D8D,
+					linewidth: 10, // in pixels
+					dashed: false,
+					dashScale: 1,
+					dashSize: 2,
+					gapSize: 1,
+					// needsUpdate: true
+				} );
+				matLineSolidThick.defines.USE_DASH = ""; 
+				matLineSolidThick.needsUpdate=true;
+				lineSolidThick = new Line2( geometrySolidThick, matLineSolidThick );
+				lineSolidThick.needsUpdate=true;
+				lineSolidThick.name="lineSolid";
+				// lineSolid.computeLineDistances();
+				// lineSolid.scale.set( 1, 1, 1 );
+				scene.add(lineSolidThick);
+
+				//虚线
+				var geometryDashed = new LineGeometry();
+				geometryDashed.setPositions( pointDashedArr );
+
+				matLineDashed = new LineMaterial( {
+					color: 0xffffff,
+					linewidth: 3, // in pixels
+					dashed: false,
+					dashScale: 1,
+					dashSize: 2,
+					gapSize: 1,
+					// needsUpdate: true
+				} );
+				matLineDashed.defines.USE_DASH = ""; 
+				matLineDashed.needsUpdate=true;
+				lineDashed = new Line2( geometryDashed, matLineDashed );
+				lineDashed.computeLineDistances();
+				lineDashed.scale.set( 1, 1, 1 );
+				lineDashed.needsUpdate=true;
+				lineDashed.name="lineSolid";
+				scene.add(lineDashed);
+
+				//下面这句代码很关键，不然图形画不出来
+				matLineSolid.resolution.set( window.innerWidth, window.innerHeight );
+				matLineSolidCar.resolution.set( window.innerWidth, window.innerHeight );
+				matLineSolidThick.resolution.set( window.innerWidth, window.innerHeight );
+				matLineDashed.resolution.set( window.innerWidth, window.innerHeight );
+			}
+
+			function initControlsMove() {
+				var onKeyDown = function ( event ) {
+					switch( event.keyCode ) {
+						case 87: // w
+							moveForward = true;
+							break;
+						case 65: // a/left
+							moveLeft = true;
+							break;
+						case 83: // s/down
+							moveBackward = true;
+							break;
+						case 68: // d/right
+							moveRight = true;
+							break;
+					}
+
+					// switch ( event.keyCode ) {
+					// 	case 38: // up
+					// 	case 87: // w
+					// 		moveForward = true;
+					// 		// carModel.position.z-=5;
+					// 		var axis = new THREE.Vector3(0,0,-Math.abs(-angle));//向量axis
+    				// 		carModel.translateOnAxis(axis,0.2);//沿着axis轴表示方向平移100
+					// 		// carModel.position.z -= Math.sin(-angle); 
+					// 		// // carModel.position.x -= 0.1;
+					// 		// carModel.position.x -= Math.cos(-angle);
+					// 		break;
+					// 	case 37: // left
+					// 	case 65: // a
+					// 		moveLeft = true; 
+					// 		carModel.rotation.y+=0.1;
+					// 		angle+=0.1;
+					// 		break;
+					// 	case 40: // down
+					// 	case 83: // s
+					// 		moveBackward = true;
+					// 		var axis = new THREE.Vector3(0,0,Math.abs(-angle));//向量axis
+    				// 		carModel.translateOnAxis(axis,0.2);//沿着axis轴表示方向平移100
+					// 		break;
+					// 	case 39: // right
+					// 	case 68: // d
+					// 		moveRight = true;
+					// 		carModel.rotation.y-=0.1;
+					// 		angle-=0.1;
+					// 		break;
+					// }
+				};
+
+				// carModel.position.y = 20;//设置网格模型几何中心y坐标
+					// var axis = new THREE.Vector3(0,0,-1);//向量axis
+    				// carModel.translateOnAxis(axis,5);//沿着axis轴表示方向平移100
+					
+					// axis = new THREE.Vector3(1,0,0);//向量axis
+					// carModel.rotateOnAxis(axis,Math.PI/8);//绕axis轴旋转π/8
+				var onKeyUp = function ( event ) {
+					switch( event.keyCode ) {
+						case 87: // w
+							moveForward = false;
+							break;
+						case 65: // a/left
+							moveLeft = false;
+							break;
+						case 83: // s/down
+							moveBackward = false;
+							break;
+						case 68: // d/right
+							moveRight = false;
+							break;
+					}
+				};
+				document.addEventListener( 'keydown', onKeyDown, false );
+				document.addEventListener( 'keyup', onKeyUp, false );
+			}
+
+			function animate() {
+				render();
+				requestAnimationFrame(animate);
+				// Get the change in time between frames
+				animatePlayer();
+			}
+
+			
+			var angle=1.0;
+			var axis = new THREE.Vector3(0,0,-1);
+
+			function curveLine(){
+				// 通过类CatmullRomCurve3创建一个3D样条曲线
+				var curve = new THREE.CatmullRomCurve3([
+					new THREE.Vector3(-2, 0, 25),
+					new THREE.Vector3(-1, 0, 8),
+					new THREE.Vector3(5, 0, 4),
+					new THREE.Vector3(10, 0, 3),
+					new THREE.Vector3(25, 0, 2)
+				],false);
+				// 样条曲线均匀分割100分，返回51个顶点坐标
+				points = curve.getPoints(100);
+				console.log('points', points);//控制台查看返回的顶点坐标
+				var geometry = new THREE.Geometry();
+				// 把从曲线轨迹上获得的顶点坐标赋值给几何体
+				geometry.vertices = points
+				var material = new THREE.LineBasicMaterial({
+						color: 0x4488ff
+					});
+				var line = new THREE.Line(geometry, material);
+				scene.add(line);
+				
+			}
+			
+			
+
+			function animatePlayer(){
+
+				
+				if(moveForward){
+					// var axis = new THREE.Vector3(0,0,-Math.abs(-angle));
+					axis.z =-Math.abs(-angle);
+					// carModel.translateOnAxis(axis,0.1);//沿着axis轴表示方向平移100
+				}
+				if(moveBackward){
+					// var axis = new THREE.Vector3(0,0,Math.abs(-angle));
+					axis.z = Math.abs(-angle);
+					// carModel.translateOnAxis(axis,0.1);//沿着axis轴表示方向平移100
+				}
+				if(moveLeft){
+					carModel.rotation.y+=0.1;
+					angle+=0.1;
+					// axis.z =-Math.abs(-angle);
+					// carModel.translateOnAxis(axis,velocity.z);//沿着axis轴表示方向平移100
+				}
+				if(moveRight){
+					carModel.rotation.y-=0.1;
+					angle-=0.1;
+					// carModel.translateOnAxis(axis,velocity.z);//沿着axis轴表示方向平移100
+				}
+
+				if( !( moveForward || moveBackward || moveLeft ||moveRight)) {
+					// No movement key being pressed. Stop movememnt
+					
+					carModel.translateOnAxis(axis,0);//沿着axis轴表示方向平移100
+				}else{
+					carModel.translateOnAxis(axis,0.1);//沿着axis轴表示方向平移100
+				}
+				
+				// switch ( event.keyCode ) {
+					// 	case 38: // up
+					// 	case 87: // w
+					// 		moveForward = true;
+					// 		// carModel.position.z-=5;
+					// 		var axis = new THREE.Vector3(0,0,-Math.abs(-angle));//向量axis
+    				// 		carModel.translateOnAxis(axis,0.2);//沿着axis轴表示方向平移100
+					// 		// carModel.position.z -= Math.sin(-angle); 
+					// 		// // carModel.position.x -= 0.1;
+					// 		// carModel.position.x -= Math.cos(-angle);
+					// 		break;
+					// 	case 37: // left
+					// 	case 65: // a
+					// 		moveLeft = true; 
+					// 		carModel.rotation.y+=0.1;
+					// 		angle+=0.1;
+					// 		break;
+					// 	case 40: // down
+					// 	case 83: // s
+					// 		moveBackward = true;
+					// 		var axis = new THREE.Vector3(0,0,Math.abs(-angle));//向量axis
+    				// 		carModel.translateOnAxis(axis,0.2);//沿着axis轴表示方向平移100
+					// 		break;
+					// 	case 39: // right
+					// 	case 68: // d
+					// 		moveRight = true;
+					// 		carModel.rotation.y-=0.1;
+					// 		angle-=0.1;
+					// 		break;
+					// }
+
+
+				// carModel.rotation.x=velocity.x * delta;
+				// carModel.rotation.y=velocity.z * delta;
+				// carModel.translateX(velocity.x * delta);
+				// carModel.translateZ(velocity.z * delta);
+				
+			}
+
+			
+			
+			initRender();
+			initCamera();
+			initScene();
+			initGrid();
+			initLight();
+			initControls();
+			initControlsMove();
+			initStats();
+			initModel();
+			loadModel();
+			initGui();
+			animate();
+			
+			// animation();
+			
+
+			
+			
+			// initFloor();
+		</script>
+
+	</body>
+
+	
+</html>

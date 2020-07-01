@@ -248,7 +248,7 @@
 
 					obtZoom: obtControls.enableZoom,
 					scenarioFather: "Cross6_left_turn",
-					scenarioFile: "scenario1",
+					// scenarioFile: "scenario1",
 					// load: function(){
 					// 	localStorage.getItem
 					// }
@@ -263,52 +263,74 @@
 				sceneControls.add(controls,"obtZoom").onChange(function (e){
 					obtControls.enableZoom=e;
 				});
-				
+				var listFather=["Cross6_left_turn","Cross6_right_turn","use_case_crossing","T_cross"];
+				var str="scenario";
+				var item,tmp;
+
 				var dictFather={"Cross6_left_turn":6,"Cross6_right_turn":7,"":2,
 								"Cross6_right_turn_2":5,"Cross6_right_turn_3":1,
 								"HIghway_8_lanes":1,"Highway_front_cutin":7,
 								"T_cross":2,"urban_narrow_road":1,
 								"use_case_urban":4,"use_case_crossing":2};
-				var listFather=Object.keys(dictFather);
-				var str="scenario";
+				var dict2list=Object.keys(dictFather);//获取全部键值
 				var listFile=[];
-				var item,tmp;
-				// listFile.push("cube");
+
+				
+
 				sceneControls.add(controls,"scenarioFather", listFather).onChange(function (e){
-					jsonName=e;
-					tmp=e;
-					listFile=[];
-					// console.log("jsonName1：",jsonName);
-					for(var i=1;i<=dictFather[jsonName];i++){
+					for(var i=1;i<=dictFather[e];i++){
 						str="scenario"+i;
 						listFile.push(str);
 					}
 
-					sceneControls.remove(item); 
-					
-					item=sceneControls.add(controls,"scenarioFile", listFile).onChange(function (e){
-						jsonName=tmp;//必须恢复上一级路径值
-						jsonName=jsonName+"/"+e;
-						// console.log("内: ",jsonName);	
-						console.log(scene.children);
-						//删除前一场景的对象
-						var childObj=scene.getObjectByName("lineSolid");
-						while(childObj){
-							scene.remove(childObj);
-							childObj=scene.getObjectByName("lineSolid");
-						}
-							
-						loadJSONFile();
-						
-					});
-				});
+					jsonName=e+"/"+str+"1";
+					var childObj=scene.getObjectByName("lineSolid");
+					while(childObj){
+						scene.remove(childObj);
+						childObj=scene.getObjectByName("lineSolid");
+					}
 
-				item=sceneControls.add(controls,"scenarioFile", listFile).onChange(function (e){
-					jsonName=tmp;
-					jsonName=jsonName+"/"+e;
-					// console.log("外: ",jsonName);
+
 					loadJSONFile();
 				});
+
+				
+
+
+				// listFile.push("cube");
+				// sceneControls.add(controls,"scenarioFather", dictFather).onChange(function (e){
+				// 	jsonName=e+"/"+str+"1";
+					// tmp=e;
+					// listFile=[];
+					// console.log("jsonName1：",jsonName);
+					// for(var i=1;i<=dictFather[jsonName];i++){
+					// 	str="scenario"+i;
+					// 	listFile.push(str);
+					// }
+					
+					// item=sceneControls.add(controls,"scenarioFile", listFile).onChange(function (e){
+					// 	jsonName=tmp;//必须恢复上一级路径值
+					// 	jsonName=jsonName+"/"+e;
+					// 	// console.log("内: ",jsonName);	
+					// 	console.log(scene.children);
+					// 	//删除前一场景的对象
+					// 	var childObj=scene.getObjectByName("lineSolid");
+					// 	while(childObj){
+					// 		scene.remove(childObj);
+					// 		childObj=scene.getObjectByName("lineSolid");
+					// 	}
+							
+					// 	loadJSONFile();
+						
+					// });
+				// });
+
+				// item=sceneControls.add(controls,"scenarioFile", listFile).onChange(function (e){
+				// 	jsonName=tmp;
+				// 	jsonName=jsonName+"/"+e;
+				// 	// console.log("外: ",jsonName);
+				// 	loadJSONFile();
+				// });
 
 				// //将设置属性添加到gui当中，gui.add(对象，属性，最小值，最大值）
 				// sizeFolder.add(gui,"lightY",0,100);

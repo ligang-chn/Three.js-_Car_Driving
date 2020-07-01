@@ -174,10 +174,10 @@
 						pointDashedArr =  [0,0,0,0,0,0];	
 					}
 				}
-				number1=num;
-				for(var i=1;i<=num;i++){
-					loaclFile2(jsonName,i);
-				}
+				// number1=num;
+				// for(var i=1;i<=num;i++){
+				// 	loaclFile2(jsonName,i);
+				// }
 				
 
 				
@@ -814,48 +814,6 @@
 				
 			}
 			
-			
-			function attachModel2curve(){
-				var childcurve=scene.getObjectByName("curve");
-				scene.remove(childcurve);
-
-				curveLine();//运动轨迹
-					// 通过Threejs的帧动画相关API播放网格模型沿着曲线做动画运动
-
-					// 声明一个数组用于存储时间序列
-					var arr = []
-					for (var i = 0; i < 100; i++) {
-						arr.push(i);
-						var dirX=points[i].x-points[i+1].x;
-						var dirZ=points[i].z-points[i+1].z;
-						directionVecX.push(dirX.toFixed(2));
-						directionVecZ.push(dirZ.toFixed(2));
-						directionVecY.push(0);
-					}
-					arr.push(100);
-					
-					
-					// 生成一个时间序列
-					var times = new Float32Array(arr);
-
-					var posArr = [];
-					points.forEach(elem => {
-						posArr.push(elem.x, elem.y, elem.z)
-					});
-
-					// 创建一个和时间序列相对应的位置坐标系列
-					var values = new Float32Array(posArr);
-					
-					// 创建一个帧动画的关键帧数据，曲线上的位置序列对应一个时间序列
-					var posTrack = new THREE.KeyframeTrack('.position', times, values);
-					var duration = 101;
-					var clip = new THREE.AnimationClip("default", duration, [posTrack]);
-
-					mixer = new THREE.AnimationMixer(carModel);
-					var AnimationAction = mixer.clipAction(clip);
-					AnimationAction.timeScale = 10;//时间比例
-					AnimationAction.play();
-			}
 
 			function animatePlayer(){
 

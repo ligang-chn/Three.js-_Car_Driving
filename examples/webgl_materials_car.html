@@ -60,13 +60,14 @@
 			var stats,matLineSolid,matLineSolidCar,matLineSolidThick,matLineDashed;
 			var controls,controlsPoint;
 			var grid, wheels = [];
-			var obtControls, groundMesh,jsonName,jsonResult;//json文件名
+			var obtControls, groundMesh,jsonName,jsonResult,tmpResult;//json文件名
+			var commonOffset=[];
 			var colors=[];
 			var sum=0;
 			var boundary_linesObj;
 			var lineDashed,lineSolid,lineSolidCar,lineSolidThick;
 			var carModel,points,directionVecX=[],directionVecY=[],directionVecZ=[];
-			
+			// var curve;//贝叶斯曲线
 			var state = {
 				animateBones: false
 			};
@@ -84,15 +85,15 @@
 
 			var speed = 100; //控制器移动速度
 			var clock = new THREE.Clock();//声明一个时钟对象
-			var mixer;
+			var mixer,number1,curve;
 
 
 
-			function loadJSONFile() {
+			function loadJSONFile(num) {
 				// console.clear();
-				console.log("json读取开始，"+jsonName);
+				// console.log("json读取开始，"+jsonName);
 				// jsonName="JSON";
-				var url = "/examples/json/"+jsonName+".json";/*json文件url，本地的就写本地的位置，如果是服务器的就写服务器的路径*/
+				var url = "/examples/json/"+jsonName+"1.json";/*json文件url，本地的就写本地的位置，如果是服务器的就写服务器的路径*/
 				var request = new XMLHttpRequest();
 				request.open("get", url);/*设置请求方法与路径*/
 				request.send(null);/*不发送数据到服务器*/
@@ -107,10 +108,12 @@
 						// console.log("pointSolidCarArr: ",pointSolidCarArr);
 						// console.log("pointSolidThickArr: ",pointSolidThickArr);
 						// console.log("pointDashedArr: ",pointDashedArr);
+			
+						// console.log("listFile1: ",jsonResult.scenario.common_offset[0],jsonResult.scenario.common_offset[1]);
 						
 						for ( var i = 0; i  <jsonResult.scenario.lines.boundary_lines.length; i ++ ) {
 							pointSolidArr=[];
-							console.log("pointSolidArr: ",pointSolidArr);
+							// console.log("pointSolidArr: ",pointSolidArr);
 							pointSolidArr.push(jsonResult.scenario.lines.boundary_lines[i][0][0]);
 							pointSolidArr.push(0);
 							pointSolidArr.push(jsonResult.scenario.lines.boundary_lines[i][0][1]);
@@ -171,6 +174,39 @@
 						pointDashedArr =  [0,0,0,0,0,0];	
 					}
 				}
+				number1=num;
+				for(var i=1;i<=num;i++){
+					loaclFile2(jsonName,i);
+				}
+				
+
+				
+
+			}
+
+			function loaclFile2(jsonName2,k){
+				var url = "/examples/json/"+jsonName2+k+".json";/*json文件url，本地的就写本地的位置，如果是服务器的就写服务器的路径*/
+				var request = new XMLHttpRequest();
+				request.open("get", url);/*设置请求方法与路径*/
+				request.send(null);/*不发送数据到服务器*/
+				request.onload = function () {/*XHR对象获取到返回信息后执行*/
+					if (request.status == 200) {/*返回状态为200，即为数据获取成功*/
+						tmpResult= JSON.parse(request.responseText);
+						// console.log("读取结果：",k,"---", tmpResult);//当读取完成之后会回调这个函数，然后此时文件的内容存储到了result中。直接操作即可。
+						console.log("tmpResult: ",k,"---",tmpResult.scenario.common_offset[0],tmpResult.scenario.common_offset[1]);
+						commonOffset.push(tmpResult.scenario.common_offset[0],tmpResult.scenario.common_offset[1]);
+
+					}
+				}
+			}
+
+			function curveLinePosition(num){
+				var catmullCurve3=[];
+				for(var i=0;i<num*2;i+=2){
+					catmullCurve3.push(new THREE.Vector3(commonOffset[i],0,commonOffset[i+1]));
+				}
+				curve = new THREE.CatmullRomCurve3(catmullCurve3,false);
+				console.log(commonOffset.length/2,"curve",curve);
 			}
 			
 			//渲染器
@@ -262,10 +298,9 @@
 
 				sceneControls.add(controls,"obtZoom").onChange(function (e){
 					obtControls.enableZoom=e;
+					attachModel2curve();
 				});
-				var listFather=["Cross6_left_turn","Cross6_right_turn","use_case_crossing","T_cross"];
-				var str="scenario";
-				var item,tmp;
+				
 
 				var dictFather={"Cross6_left_turn":6,"Cross6_right_turn":7,"":2,
 								"Cross6_right_turn_2":5,"Cross6_right_turn_3":1,
@@ -273,25 +308,18 @@
 								"T_cross":2,"urban_narrow_road":1,
 								"use_case_urban":4,"use_case_crossing":2};
 				var dict2list=Object.keys(dictFather);//获取全部键值
-				var listFile=[];
+				var str="scenario";	
 
-				
+				sceneControls.add(controls,"scenarioFather", dict2list).onChange(function (e){
 
-				sceneControls.add(controls,"scenarioFather", listFather).onChange(function (e){
-					for(var i=1;i<=dictFather[e];i++){
-						str="scenario"+i;
-						listFile.push(str);
-					}
-
-					jsonName=e+"/"+str+"1";
+					jsonName=e+"/"+str;
 					var childObj=scene.getObjectByName("lineSolid");
 					while(childObj){
 						scene.remove(childObj);
 						childObj=scene.getObjectByName("lineSolid");
 					}
-
-
-					loadJSONFile();
+				
+					loadJSONFile(dictFather[e]);
 				});
 
 				
@@ -514,42 +542,7 @@
 					shadow.renderOrder = 2;
 					carModel.add( shadow );
 					
-					curveLine();//运动轨迹
-					// 通过Threejs的帧动画相关API播放网格模型沿着曲线做动画运动
-
-					// 声明一个数组用于存储时间序列
-					var arr = []
-					for (var i = 0; i < 100; i++) {
-						arr.push(i);
-						var dirX=points[i].x-points[i+1].x;
-						var dirZ=points[i].z-points[i+1].z;
-						directionVecX.push(dirX.toFixed(2));
-						directionVecZ.push(dirZ.toFixed(2));
-						directionVecY.push(0);
-					}
-					arr.push(100);
 					
-					
-					// 生成一个时间序列
-					var times = new Float32Array(arr);
-
-					var posArr = [];
-					points.forEach(elem => {
-						posArr.push(elem.x, elem.y, elem.z)
-					});
-
-					// 创建一个和时间序列相对应的位置坐标系列
-					var values = new Float32Array(posArr);
-					console.log("y: ",carModel.rotation.y);
-					// 创建一个帧动画的关键帧数据，曲线上的位置序列对应一个时间序列
-					var posTrack = new THREE.KeyframeTrack('.position', times, values);
-					var duration = 101;
-					var clip = new THREE.AnimationClip("default", duration, [posTrack]);
-
-					mixer = new THREE.AnimationMixer(carModel);
-					var AnimationAction = mixer.clipAction(clip);
-					AnimationAction.timeScale = 10;//时间比例
-					AnimationAction.play();
 
 					scene.add( carModel );
 				} );
@@ -795,28 +788,74 @@
 
 			function curveLine(){
 				// 通过类CatmullRomCurve3创建一个3D样条曲线
-				var curve = new THREE.CatmullRomCurve3([
-					new THREE.Vector3(-2, 0, 25),
-					new THREE.Vector3(-1, 0, 8),
-					new THREE.Vector3(5, 0, 4),
-					new THREE.Vector3(10, 0, 3),
-					new THREE.Vector3(25, 0, 2)
-				],false);
+				// var curve = new THREE.CatmullRomCurve3([
+				// 	new THREE.Vector3(-2, 0, 25),
+				// 	new THREE.Vector3(-1, 0, 8),
+				// 	new THREE.Vector3(5, 0, 4),
+				// 	new THREE.Vector3(10, 0, 3),
+				// 	new THREE.Vector3(25, 0, 2)
+				// ],false);
+				
+
+				curveLinePosition(number1);
+				console.log("curve: ",curve);
 				// 样条曲线均匀分割100分，返回51个顶点坐标
 				points = curve.getPoints(100);
-				console.log('points', points);//控制台查看返回的顶点坐标
+				// console.log('points', points);//控制台查看返回的顶点坐标
 				var geometry = new THREE.Geometry();
 				// 把从曲线轨迹上获得的顶点坐标赋值给几何体
 				geometry.vertices = points
 				var material = new THREE.LineBasicMaterial({
 						color: 0x4488ff
 					});
-				var line = new THREE.Line(geometry, material);
-				scene.add(line);
+				var linecurve = new THREE.Line(geometry, material);
+				linecurve.name="curve";
+				scene.add(linecurve);
 				
 			}
 			
 			
+			function attachModel2curve(){
+				var childcurve=scene.getObjectByName("curve");
+				scene.remove(childcurve);
+
+				curveLine();//运动轨迹
+					// 通过Threejs的帧动画相关API播放网格模型沿着曲线做动画运动
+
+					// 声明一个数组用于存储时间序列
+					var arr = []
+					for (var i = 0; i < 100; i++) {
+						arr.push(i);
+						var dirX=points[i].x-points[i+1].x;
+						var dirZ=points[i].z-points[i+1].z;
+						directionVecX.push(dirX.toFixed(2));
+						directionVecZ.push(dirZ.toFixed(2));
+						directionVecY.push(0);
+					}
+					arr.push(100);
+					
+					
+					// 生成一个时间序列
+					var times = new Float32Array(arr);
+
+					var posArr = [];
+					points.forEach(elem => {
+						posArr.push(elem.x, elem.y, elem.z)
+					});
+
+					// 创建一个和时间序列相对应的位置坐标系列
+					var values = new Float32Array(posArr);
+					
+					// 创建一个帧动画的关键帧数据，曲线上的位置序列对应一个时间序列
+					var posTrack = new THREE.KeyframeTrack('.position', times, values);
+					var duration = 101;
+					var clip = new THREE.AnimationClip("default", duration, [posTrack]);
+
+					mixer = new THREE.AnimationMixer(carModel);
+					var AnimationAction = mixer.clipAction(clip);
+					AnimationAction.timeScale = 10;//时间比例
+					AnimationAction.play();
+			}
 
 			function animatePlayer(){
 

@@ -1,6 +1,10 @@
 {
   "scenario": {
     "lines": {
+      "boundary":[
+        [-11, 800], [-11, -800],
+				[7, -800], [7, 800]
+      ],
       "thick_lines": [], 
       "solid_lines": [], 
       "dashed_lines": [

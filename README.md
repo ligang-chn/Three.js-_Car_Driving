@@ -85,3 +85,20 @@ git clone --depth=1 https://github.com/mrdoob/three.js.git
 [dev-dependencies-url]: https://david-dm.org/mrdoob/three.js#info=devDependencies
 [lgtm]: https://img.shields.io/lgtm/alerts/github/mrdoob/three.js
 [lgtm-url]: https://lgtm.com/projects/g/mrdoob/three.js/
+
+
+
+##### 文件目录结构
+
+three.js-master
+└───build——src目录下各个代码模块打包后的结果
+    │───three.js——开发的时候.html文件中要引入的threejs引擎库，和引入jquery一样，可以辅助浏览器调试
+    │───three.min.js——three.js压缩后的结构文件体积更小，可以部署项目的时候在.html中引入。
+    │
+└───examples——里面有大量的threejs案例，平时可以通过代码编辑全局查找某个API、方法或属性来定位到一个案例
+    │
+└───src——Three.js引擎的各个模块，可以通过阅读源码深度理解threejs引擎
+    │───index.html——打开该文件可以实现离线查看threejs API文档
+    │
+└───utils——一些辅助工具
+    │───\utils\exporters\blender——blender导出threejs文件的插件

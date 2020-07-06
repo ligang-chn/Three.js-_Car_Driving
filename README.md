@@ -75,7 +75,7 @@ I've tested this project in Google Chrome (83.0.4103.116) rendering [35 ~ 121] f
 
 - console.log("print string",variable);——Print the result or variable;
 
-
+---
 #### 7 Oh~ No~
 
 Dear programer:

@@ -3,6 +3,8 @@
     "lines": {
       "thick_lines": [], 
       "solid_lines": [], 
+      "boundary":[
+      ],
       "dashed_lines": [
         [
           [

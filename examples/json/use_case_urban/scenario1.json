@@ -2,6 +2,8 @@
   "scenario": {
     "lines": {
       "thick_lines": [], 
+      "boundary":[
+      ],
       "solid_lines": [
         [
           [

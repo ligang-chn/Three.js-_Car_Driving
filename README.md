@@ -1,11 +1,12 @@
-three.js
+Three.js_Car_Driving
 ========
+Hi there, this is my first attempt to create an interactive 3D world using Three.js.
 
 
+#### 1 What is Three.js ?
+ Three.js  —— JavaScript 3D library
 
-#### JavaScript 3D library ####
-
-The aim of the project is to create an easy to use, lightweight, 3D library with a default WebGL renderer. The library also provides Canvas 2D, SVG and CSS3D renderers in the examples.
+The aim of three.js project is to create an easy to use, lightweight, 3D library with a default WebGL renderer. The library also provides Canvas 2D, SVG and CSS3D renderers in the examples.
 
 [Examples](http://threejs.org/examples/) &mdash;
 [Documentation](http://threejs.org/docs/) &mdash;
@@ -16,89 +17,73 @@ The aim of the project is to create an easy to use, lightweight, 3D library with
 [Slack](https://join.slack.com/t/threejs/shared_invite/enQtMzYxMzczODM2OTgxLTQ1YmY4YTQxOTFjNDAzYmQ4NjU2YzRhNzliY2RiNDEyYjU2MjhhODgyYWQ5Y2MyZTU3MWNkOGVmOGRhOTQzYTk) &mdash;
 [Discord](https://discordapp.com/invite/HF4UdyF)
 
-### Usage ###
-
-This code creates a scene, a camera, and a geometric cube, and it adds the cube to the scene. It then creates a `WebGL` renderer for the scene and camera, and it adds that viewport to the `document.body` element. Finally, it animates the cube within the scene for the camera.
-
-```javascript
-import * as THREE from 'js/three.module.js';
-
-var camera, scene, renderer;
-var geometry, material, mesh;
-
-init();
-animate();
-
-function init() {
-
-	camera = new THREE.PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 0.01, 10 );
-	camera.position.z = 1;
-
-	scene = new THREE.Scene();
-
-	geometry = new THREE.BoxGeometry( 0.2, 0.2, 0.2 );
-	material = new THREE.MeshNormalMaterial();
-
-	mesh = new THREE.Mesh( geometry, material );
-	scene.add( mesh );
-
-	renderer = new THREE.WebGLRenderer( { antialias: true } );
-	renderer.setSize( window.innerWidth, window.innerHeight );
-	document.body.appendChild( renderer.domElement );
-
-}
-
-function animate() {
-
-	requestAnimationFrame( animate );
-
-	mesh.rotation.x += 0.01;
-	mesh.rotation.y += 0.02;
-
-	renderer.render( scene, camera );
-
-}
-```
-
-If everything went well, you should see [this](https://jsfiddle.net/8kubjpL5/).
-
-### Cloning this repository ###
-
-Cloning the repo with all its history results in a ~2GB download. If you don't need the whole history you can use the `depth` parameter to significantly reduce download size.
-
-```sh
-git clone --depth=1 https://github.com/mrdoob/three.js.git
-```
-
-### Change log ###
-
-[Releases](https://github.com/mrdoob/three.js/releases)
-
-
-[npm]: https://img.shields.io/npm/v/three
-[npm-url]: https://www.npmjs.com/package/three
-[build-size]: https://badgen.net/bundlephobia/minzip/three
-[build-size-url]: https://bundlephobia.com/result?p=three
-[npm-downloads]: https://img.shields.io/npm/dw/three
-[npmtrends-url]: https://www.npmtrends.com/three
-[dev-dependencies]: https://img.shields.io/david/dev/mrdoob/three.js
-[dev-dependencies-url]: https://david-dm.org/mrdoob/three.js#info=devDependencies
-[lgtm]: https://img.shields.io/lgtm/alerts/github/mrdoob/three.js
-[lgtm-url]: https://lgtm.com/projects/g/mrdoob/three.js/
+#### 2 ScreenShots
 
 
 
-##### 文件目录结构
 
-three.js-master
-└───build——src目录下各个代码模块打包后的结果
-    │───three.js——开发的时候.html文件中要引入的threejs引擎库，和引入jquery一样，可以辅助浏览器调试
-    │───three.min.js——three.js压缩后的结构文件体积更小，可以部署项目的时候在.html中引入。
-    │
-└───examples——里面有大量的threejs案例，平时可以通过代码编辑全局查找某个API、方法或属性来定位到一个案例
-    │
-└───src——Three.js引擎的各个模块，可以通过阅读源码深度理解threejs引擎
-    │───index.html——打开该文件可以实现离线查看threejs API文档
-    │
-└───utils——一些辅助工具
-    │───\utils\exporters\blender——blender导出threejs文件的插件
+#### 3 Intruduction
+Based on the official case of Three.js webgl_materials_car rewritten, the features are as follows:
+
+1\) Through XMLHttpRequest, you can request a specific URL without refreshing the page to obtain the scene configuration file;
+
+2\) Use dat.Gui to add controls such as buttons and tabs;
+
+3\) You can drive the car using the WASD keys.
+
+
+#### 3 Structure
+
+
+Three.js_Car_Driving-master
+- build——The result of packaging each code module in the src directory.
+	- three.js——The threejs engine library to be introduced in the .html file during development is the same as the introduction of jquery, which can assist browser debugging.
+    - three.min.js——The compressed structure file of three.js is smaller and can be introduced in .html when you can deploy the project.
+  
+- examples——There are a lot of threejs cases in it. Usually, you can find a certain API, method or attribute through code editing to locate a case.
+  
+- src——The various modules of the Three.js engine can be deeply understood by reading the source code of the threejs engine.
+    - index.html——Open this file to view threejs API documents offline.
+    
+- utils——Some auxiliary tools
+    - \utils\exporters\blender——Blender plugin for exporting threejs files.
+
+>Note:
+>json——scenarios config
+
+
+#### 4 Usage
+
+1\) Clone or download the whole project.
+>git clone https://github.com/ligang-chn/Three.js-_Car_Driving.git
+
+2\) Open it as a project by VS Code.
+
+3\) In the EXTENSIONS of VS Code,install the `Live Server` extension.
+>Live Server——Launch a development local Server with live reload feature for static & dynamic pages.
+
+4\) Now ,  you can find the option(`Open with Live Server`) in the right-click menu.
+
+5\) Yee~! It will run on the browser.
+
+#### 5 Browser Support
+I've tested this project in Google Chrome (83.0.4103.116) rendering [35 ~ 121] fps.
+
+#### 6 Debug
+
+- F12: Bring up the debug console.
+
+- console.log("print string",variable);——Print the result or variable;
+
+
+#### 7 Oh~ No~
+
+Dear programer:
+
+when I wrote this code, only god and I know how it worked.
+
+Now, only god knows it!
+
+Therefore, if you are trying to optimize this routine and it fails (most surely), please increase this counter as a waring for the next person:
+
+total_hours_wasted_here = 42

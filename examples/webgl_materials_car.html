@@ -319,7 +319,7 @@
 				controls = {
 					obtZoom: obtControls.enableZoom,
 					Scenario: "Cross6_left_turn",
-					addPoint: addPoint
+					zoomScale: zoomScale
 				};
 
 				var datGui=new GUI();//初始化对象
@@ -327,7 +327,7 @@
 
 				var sceneControls=datGui.addFolder("Choose ODD please");//分组设置
 				sceneControls.open();
-				sceneControls.add(controls,"addPoint");
+				sceneControls.add(controls,"zoomScale");
 
 				sceneControls.add(controls,"obtZoom").onChange(function (e){
 					obtControls.enableZoom=e;
@@ -672,7 +672,7 @@
 			// var axisMixer = new THREE.Vector3(0,0,-1);
 			var axisMixerPre=new THREE.Vector3(0,0,1);
 			var indexk=0;
-			function addPoint() {
+			function zoomScale() {
 				// 更新帧动画的时间
 				// carModel.rotateY(0.5);
 				mixer.update(0.1);

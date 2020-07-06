@@ -19,10 +19,12 @@ The aim of three.js project is to create an easy to use, lightweight, 3D library
 
 #### 2 ScreenShots
 
+![1](https://github.com/ligang-chn/Three.js-_Car_Driving/blob/master/image/screenshots1.png)
 
-
+![2](https://github.com/ligang-chn/Three.js-_Car_Driving/blob/master/image/screenshots2.png)
 
 #### 3 Intruduction
+
 Based on the official case of Three.js webgl_materials_car rewritten, the features are as follows:
 
 1\) Through XMLHttpRequest, you can request a specific URL without refreshing the page to obtain the scene configuration file;
